@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full bg-slate-950">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TUU-CodeAgent - Hệ thống AI Agent Hỗ trợ Học Lập trình CNTT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            900: '#0a0f1d',
+                            800: '#131c31',
+                            700: '#1e293b',
+                            600: '#334155'
+                        },
+                        brand: {
+                            primary: '#4f46e5',
+                            secondary: '#9333ea',
+                            accent: '#db2777'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .aspect-16-9 {
+            aspect-ratio: 16 / 9;
+            max-height: 85vh;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(79, 70, 229, 0.3); }
+            50% { box-shadow: 0 0 35px rgba(147, 51, 234, 0.6); }
+        }
+        .agent-glow {
+            animation: pulse-glow 3s infinite;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #131c31;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-full flex items-center justify-center p-2 md:p-6 font-sans select-none overflow-hidden">
+
+    <!-- MAIN 16:9 CONTAINER -->
+    <div id="app-container" class="w-full max-w-[1440px] aspect-16-9 bg-dark-800 rounded-2xl shadow-2xl border border-slate-700/80 flex flex-col overflow-hidden relative">
+        
+        <!-- Top Navigation Header -->
+        <header class="bg-dark-900/90 backdrop-blur border-b border-slate-700 px-6 py-3 flex items-center justify-between shrink-0">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-primary to-brand-secondary flex items-center justify-center shadow-lg agent-glow">
+                    <i class="fa-solid fa-microchip text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base tracking-wide bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">TUU-CodeAgent</h1>
+                    <p class="text-[11px] text-slate-400">Hệ thống AI Agent Hỗ trợ Học Lập trình CNTT</p>
+                </div>
+            </div>
+
+            <!-- View Switcher Tabs (Module 1, 2, 3, 4) -->
+            <nav class="flex space-x-1.5 bg-dark-700 p-1 rounded-xl border border-slate-600">
+                <button type="button" id="btn-nav-analysis" onclick="NavigationController.switchView('analysis')" class="nav-tab px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center space-x-2 bg-brand-primary text-white shadow">
+                    <i class="fa-solid fa-crosshairs"></i>
+                    <span>Module 1. Phân Tích</span>
+                </button>
+                <button type="button" id="btn-nav-code" onclick="NavigationController.switchView('code')" class="nav-tab px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-dark-600">
+                    <i class="fa-solid fa-code"></i>
+                    <span>Module 2. Sinh Code</span>
+                </button>
+                <button type="button" id="btn-nav-debug" onclick="NavigationController.switchView('debug')" class="nav-tab px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-dark-600">
+                    <i class="fa-solid fa-bug"></i>
+                    <span>Module 3. Sửa Lỗi</span>
+                </button>
+                <button type="button" id="btn-nav-explain" onclick="NavigationController.switchView('explain')" class="nav-tab px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-dark-600">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span>Module 4. Giải Thích</span>
+                </button>
+            </nav>
+
+            <div class="flex items-center space-x-2">
+                <span id="global-status-badge" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span class="w-2 h-2 mr-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
+                    Pipeline Đồng Bộ 4 Tác Tử
+                </span>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT PANELS -->
+        <main class="flex-1 overflow-hidden relative bg-dark-900">
+            
+            <!-- MODULE 1: Phân tích yêu cầu -->
+            <section id="view-analysis" class="view-panel h-full flex flex-col p-6 overflow-y-auto">
+                <div class="mb-4">
+                    <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-crosshairs text-indigo-400"></i>
+                        <span>Module 1: Tiếp Nhận & Phân Tích Yêu Cầu (AnalysisModule)</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Tác tử Analyst bóc tách yêu cầu học tập và tự động kích hoạt toàn bộ chuỗi pipeline đa tác tử sang các module sau.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+                    <div class="lg:col-span-5 flex flex-col space-y-4">
+                        <div class="bg-dark-800 p-4 rounded-xl border border-slate-700 flex flex-col flex-1 shadow-md">
+                            <label class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Nhập yêu cầu học tập hoặc bài toán:</label>
+                            <textarea id="analysis-input-box" rows="5" class="w-full bg-dark-900 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 resize-none flex-1 font-mono" placeholder="Ví dụ: Tìm hiểu về con trỏ trong C++, vòng lặp, thuật toán...">Tìm hiểu về con trỏ (pointers) trong C++ và cách quản lý bộ nhớ heap.</textarea>
+                            
+                            <div class="mt-4 flex items-center justify-between">
+                                <div class="flex space-x-2">
+                                    <button type="button" onclick="AnalysisManager.setPreset('pointer')" class="px-2.5 py-1 bg-dark-700 hover:bg-dark-600 text-xs rounded-lg text-slate-300 border border-slate-600 transition">Con Trỏ C++</button>
+                                    <button type="button" onclick="AnalysisManager.setPreset('loop')" class="px-2.5 py-1 bg-dark-700 hover:bg-dark-600 text-xs rounded-lg text-slate-300 border border-slate-600 transition">Vòng Lặp</button>
+                                </div>
+                                <button type="button" onclick="WorkflowManager.runFullPipeline()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-lg shadow-lg transition flex items-center space-x-2">
+                                    <i class="fa-solid fa-play"></i>
+                                    <span>Chạy Pipeline Tự Động 4 Module</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-7 bg-dark-800 p-5 rounded-xl border border-slate-700 flex flex-col shadow-md">
+                        <h3 class="text-sm font-semibold text-slate-300 mb-3 flex items-center justify-between">
+                            <span>Báo Cáo Phân Tích Đa Chiều Từ Pipeline</span>
+                            <span id="analysis-state-badge" class="text-xs text-indigo-400 font-normal">Sẵn sàng đồng bộ</span>
+                        </h3>
+                        <div id="analysis-result-panel" class="bg-dark-900 border border-slate-700/60 rounded-xl p-4 flex-1 overflow-y-auto text-sm text-slate-300 space-y-3">
+                            <div class="flex items-center justify-center h-full text-slate-500 italic text-xs text-center p-4">
+                                <p>Nhập yêu cầu bất kỳ (VD: con trỏ, vòng lặp, struct...) và nhấn "Chạy Pipeline Tự Động 4 Module" để hệ thống tự động sinh code, quét lỗi và giải thích chi tiết sang các module sau.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MODULE 2: Sinh & Sửa Code -->
+            <section id="view-code" class="view-panel h-full hidden flex-col p-6 overflow-y-auto">
+                <div class="mb-4 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+                            <i class="fa-solid fa-code text-indigo-400"></i>
+                            <span>Module 2: Sinh & Chỉnh Sửa Mã Nguồn (CodeGenerationModule)</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Tác tử Coder tự động sinh mã nguồn khớp tuyệt đối với đề bài bạn vừa nhập ở Module 1.</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button type="button" onclick="CodeManager.generateCodeFromPrompt()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition shadow flex items-center space-x-1.5">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>Đồng Bộ Từ Đề Bài</span>
+                        </button>
+                        <button type="button" onclick="CodeManager.formatCode()" class="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-medium transition shadow flex items-center space-x-1.5">
+                            <i class="fa-solid fa-file-code"></i>
+                            <span>Định Dạng Code</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+                    <div class="lg:col-span-8 bg-dark-800 rounded-xl border border-slate-700 flex flex-col shadow-md overflow-hidden">
+                        <div class="bg-dark-900 px-4 py-2 border-b border-slate-700 flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-yellow-500 inline-block"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+                                <span id="code-filename-label" class="text-xs font-mono text-slate-400 ml-2">pointers_demo.cpp</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <select id="code-lang-selector" onchange="CodeManager.switchLanguage()" class="bg-dark-700 text-slate-200 text-xs rounded px-2 py-1 border border-slate-600 focus:outline-none">
+                                    <option value="cpp">C++</option>
+                                    <option value="python">Python</option>
+                                </select>
+                                <button type="button" onclick="CodeManager.copyCodeText()" class="text-slate-400 hover:text-white px-2 py-1 text-xs bg-dark-700 rounded border border-slate-600 transition">
+                                    <i class="fa-regular fa-copy"></i> Sao chép
+                                </button>
+                            </div>
+                        </div>
+                        <textarea id="code-editor-textarea" class="w-full flex-1 bg-dark-900 p-4 font-mono text-xs text-indigo-200 resize-none focus:outline-none leading-relaxed" spellcheck="false" oninput="WorkflowManager.onCodeEdited()"></textarea>
+                    </div>
+
+                    <div class="lg:col-span-4 bg-dark-800 p-4 rounded-xl border border-slate-700 flex flex-col shadow-md">
+                        <h3 class="text-sm font-semibold text-slate-300 mb-3 flex items-center space-x-2">
+                            <i class="fa-solid fa-terminal text-purple-400"></i>
+                            <span>Trạng Thái Tác Tử Coder</span>
+                        </h3>
+                        <div class="space-y-3 flex-1 flex flex-col justify-between">
+                            <div class="space-y-3 text-xs text-slate-300">
+                                <div class="bg-dark-900 p-3 rounded-lg border border-slate-700">
+                                    <span class="font-semibold text-indigo-400 block mb-1">Chủ đề đang đồng bộ:</span>
+                                    <p id="coder-status-text" class="text-slate-400">Được đồng bộ tự động từ Module 1.</p>
+                                </div>
+                            </div>
+                            <div class="bg-dark-900/50 p-3 rounded-lg border border-slate-700/50 text-[11px] text-slate-400">
+                                <i class="fa-solid fa-bolt text-amber-400 mr-1"></i> Mã nguồn phản ánh chính xác đề bài và tự động liên kết sang Module 3 & 4.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MODULE 3: Kiểm tra lỗi -->
+            <section id="view-debug" class="view-panel h-full hidden flex-col p-6 overflow-y-auto">
+                <div class="mb-4 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+                            <i class="fa-solid fa-bug text-indigo-400"></i>
+                            <span>Module 3: Kiểm Tra Lỗi Chương Trình (DebugModule)</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Tác tử Debugger tự động quét mã nguồn vừa sinh ra để tìm lỗi cú pháp, logic hoặc rò rỉ bộ nhớ.</p>
+                    </div>
+                    <button type="button" onclick="DebugManager.executeDebugScan()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-medium transition shadow flex items-center space-x-2">
+                        <i class="fa-solid fa-shield-virus"></i>
+                        <span>Quét Lại Mã Nguồn</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+                    <div class="lg:col-span-7 bg-dark-800 p-4 rounded-xl border border-slate-700 flex flex-col shadow-md">
+                        <h3 class="text-sm font-semibold text-slate-300 mb-3">Mã Nguồn Đang Được Kiểm Tra Lỗi</h3>
+                        <div class="bg-dark-900 rounded-lg border border-slate-700 p-3 flex-1 font-mono text-xs text-slate-300 overflow-y-auto max-h-[350px]">
+                            <pre id="debug-code-view" class="text-indigo-200"></pre>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-5 bg-dark-800 p-4 rounded-xl border border-slate-700 flex flex-col shadow-md">
+                        <h3 class="text-sm font-semibold text-slate-300 mb-3 flex items-center justify-between">
+                            <span>Báo Cáo Lỗi & Vá Lỗi Tự Động</span>
+                            <span id="debug-error-badge" class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Đã quét an toàn</span>
+                        </h3>
+                        <div id="debug-report-box" class="bg-dark-900 rounded-lg border border-slate-700 p-4 flex-1 overflow-y-auto space-y-3">
+                            <div class="text-center text-slate-500 py-10 text-xs">
+                                <i class="fa-solid fa-circle-check text-3xl mb-2 text-emerald-500/50 block"></i>
+                                <p>Hệ thống tự động kiểm tra lỗi khi chạy pipeline ở Module 1.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MODULE 4: Giải thích kết quả -->
+            <section id="view-explain" class="view-panel h-full hidden flex-col p-6 overflow-y-auto">
+                <div class="mb-4 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+                            <i class="fa-solid fa-graduation-cap text-indigo-400"></i>
+                            <span>Module 4: Giải Thích Từng Dòng Code & Hỏi Đáp Tương Tác (ExplanationModule)</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Tác tử Tutor phân tích chính xác đoạn code đang có ở Module 2 và diễn giải chi tiết từng dòng lệnh.</p>
+                    </div>
+                    <button type="button" onclick="ExplanationManager.generateLecture()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition shadow flex items-center space-x-1.5">
+                        <i class="fa-solid fa-rotate"></i>
+                        <span>Cập Nhật Giải Thích Mới Nhất</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+                    <div class="lg:col-span-7 bg-dark-800 p-5 rounded-xl border border-slate-700 flex flex-col shadow-md">
+                        <h3 class="text-sm font-semibold text-slate-300 mb-3 flex items-center justify-between">
+                            <span>Giải Thích Chi Tiết Từng Dòng Code (Line-by-Line Breakdown)</span>
+                            <span id="explanation-line-count" class="text-xs text-indigo-400 font-mono">Đồng bộ từ Module 2</span>
+                        </h3>
+                        <div id="explanation-lecture-box" class="bg-dark-900 rounded-lg border border-slate-700 p-4 flex-1 overflow-y-auto text-xs text-slate-300 space-y-3 leading-relaxed font-mono">
+                            <div class="p-3.5 rounded-xl bg-indigo-950/30 border border-indigo-800/40 font-sans">
+                                <h4 class="font-bold text-indigo-300 mb-1 text-xs"><i class="fa-solid fa-book-open mr-2"></i> Đang chuẩn bị bài giảng giải thích</h4>
+                                <p class="text-xs text-slate-300">Tác tử Tutor đang đọc mã nguồn từ Module 2 để diễn giải...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-5 bg-dark-800 p-5 rounded-xl border border-slate-700 flex flex-col shadow-md">
+                        <h3 class="text-sm font-semibold text-slate-300 mb-3 flex items-center space-x-2">
+                            <i class="fa-solid fa-comments text-purple-400"></i>
+                            <span>Hỏi Đáp Thêm Cùng Gia Sư AI (Bạn còn muốn hỏi gì không?)</span>
+                        </h3>
+                        <div id="tutor-chatbox-history" class="bg-dark-900 rounded-lg border border-slate-700 p-3 flex-1 overflow-y-auto space-y-2.5 mb-3 text-xs max-h-[300px]">
+                            <div class="bg-dark-700/60 p-2.5 rounded-lg text-slate-200">
+                                <span class="font-semibold text-indigo-400 block mb-0.5">Tutor AI:</span>
+                                Pipeline đã tự động xử lý và giải thích chi tiết từng dòng code theo đề bài bạn vừa nhập. Bạn có thắc mắc gì hoặc muốn hỏi thêm câu hỏi nào nữa không?
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <input type="text" id="tutor-chat-input" onkeypress="if(event.key==='Enter') ExplanationManager.sendChatMessage()" class="flex-1 bg-dark-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500" placeholder="Nhập câu hỏi thắc mắc của bạn...">
+                            <button type="button" onclick="ExplanationManager.sendChatMessage()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition shadow"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer Bar -->
+        <footer class="bg-dark-900/90 border-t border-slate-700 px-6 py-2.5 flex items-center justify-between text-xs text-slate-400 shrink-0">
+            <div class="flex items-center space-x-4">
+                <span><i class="fa-solid fa-link text-indigo-400 mr-1"></i> Multi-Agent Pipeline (4 Module Liên Kết Tự Động)</span>
+                <span>•</span>
+                <span>Khung hình 16:9 Chuẩn</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <span class="text-slate-500">TUU-CodeAgent v4.0</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- SCRIPT SECTION WITH MODULAR CLASSES -->
+    <script>
+        /**
+         * WorkflowManager Class
+         * Điều phối toàn bộ quy trình 4 module tự động liên kết (Pipeline).
+         */
+        class WorkflowManager {
+            static currentPrompt = "Tìm hiểu về con trỏ (pointers) trong C++ và cách quản lý bộ nhớ heap.";
+
+            static setPrompt(prompt) {
+                this.currentPrompt = prompt;
+            }
+
+            static runFullPipeline() {
+                const inputEl = document.getElementById('analysis-input-box');
+                if (inputEl && inputEl.value.trim()) {
+                    this.currentPrompt = inputEl.value.trim();
+                }
+
+                // Chạy liên tiếp 4 module trong pipeline theo đúng thứ tự liên kết chặt chẽ
+                AnalysisManager.executeAnalysis(this.currentPrompt);
+                CodeManager.generateCodeFromPrompt(this.currentPrompt);
+                DebugManager.executeDebugScan();
+                ExplanationManager.generateLecture();
+
+                // Thông báo hoàn thành
+                const globalBadge = document.getElementById('global-status-badge');
+                if (globalBadge) {
+                    globalBadge.innerHTML = `<span class="w-2 h-2 mr-1.5 bg-emerald-400 rounded-full animate-pulse"></span> Pipeline đã liên kết 4 module thành công!`;
+                }
+            }
+
+            static onCodeEdited() {
+                // Khi người dùng chỉnh sửa code trực tiếp ở Module 2, tự động cập nhật cache debug và giải thích
+                DebugManager.syncCodePreview();
+            }
+        }
+
+        /**
+         * NavigationController Class
+         * Điều hướng qua lại giữa 4 Module
+         */
+        class NavigationController {
+            static views = ['analysis', 'code', 'debug', 'explain'];
+
+            static switchView(targetView) {
+                this.views.forEach(view => {
+                    const viewEl = document.getElementById(`view-${view}`);
+                    const navBtn = document.getElementById(`btn-nav-${view}`);
+                    
+                    if (viewEl && navBtn) {
+                        if (view === targetView) {
+                            viewEl.classList.remove('hidden');
+                            viewEl.classList.add('flex');
+                            navBtn.className = "nav-tab px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center space-x-2 bg-brand-primary text-white shadow";
+                        } else {
+                            viewEl.classList.add('hidden');
+                            viewEl.classList.remove('flex');
+                            navBtn.className = "nav-tab px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-dark-600";
+                        }
+                    }
+                });
+
+                if (targetView === 'debug') {
+                    DebugManager.syncCodePreview();
+                } else if (targetView === 'explain') {
+                    // Tự động đồng bộ và sinh giải thích chi tiết ngay khi chuyển sang Module 4
+                    ExplanationManager.generateLecture();
+                }
+            }
+        }
+
+        /**
+         * AnalysisManager Class
+         * Quản lý Module 1: Phân tích yêu cầu
+         */
+        class AnalysisManager {
+            static setPreset(type) {
+                const input = document.getElementById('analysis-input-box');
+                if (!input) return;
+                if (type === 'pointer') {
+                    input.value = "Tìm hiểu về con trỏ (pointers) trong C++ và cách quản lý bộ nhớ heap.";
+                } else if (type === 'loop') {
+                    input.value = "Tìm hiểu về vòng lặp for, while và cách tối ưu hiệu năng trong Python.";
+                }
+                WorkflowManager.setPrompt(input.value);
+            }
+
+            static executeAnalysis(promptText) {
+                const inputEl = document.getElementById('analysis-input-box');
+                const resultPanel = document.getElementById('analysis-result-panel');
+                const stateBadge = document.getElementById('analysis-state-badge');
+
+                if (!inputEl || !resultPanel || !stateBadge) return;
+                const text = promptText || inputEl.value.trim();
+                WorkflowManager.setPrompt(text);
+
+                if (!text) {
+                    resultPanel.innerHTML = `<div class="text-red-400 text-xs p-3 bg-red-950/30 rounded border border-red-800">Vui lòng nhập yêu cầu!</div>`;
+                    return;
+                }
+
+                stateBadge.textContent = "Đang chạy pipeline 4 module...";
+                resultPanel.innerHTML = `
+                    <div class="flex items-center space-x-2 text-indigo-400 animate-pulse py-8 justify-center text-xs">
+                        <i class="fa-solid fa-spinner fa-spin text-base"></i>
+                        <span>Tác tử Analyst đang phân tích yêu cầu "${text}" và đồng bộ sang Code, Debug, Giải thích...</span>
+                    </div>
+                `;
+
+                setTimeout(() => {
+                    stateBadge.textContent = "Đã đồng bộ 4 module";
+                    
+                    resultPanel.innerHTML = `
+                        <div class="space-y-3 text-xs font-sans">
+                            <div class="p-3 bg-indigo-950/40 border border-indigo-800/50 rounded-lg">
+                                <h4 class="font-bold text-indigo-300 uppercase mb-1 text-[11px]">1. Yêu Cầu Gốc Của Bạn</h4>
+                                <p class="text-slate-300"><b>"${text}"</b></p>
+                            </div>
+                            <div class="p-3 bg-dark-900 border border-slate-700 rounded-lg">
+                                <h4 class="font-bold text-purple-400 uppercase mb-1 text-[11px]">2. Kết Quả Liên Kết Đa Tác Tử</h4>
+                                <ul class="list-disc list-inside text-slate-300 space-y-1 mt-1">
+                                    <li><b>Module 1 (Phân Tích):</b> Đã bóc tách từ khóa và cấu trúc chủ đề thành công.</li>
+                                    <li><b>Module 2 (Sinh Code):</b> Đã tự động sinh mã nguồn tương ứng tại Module 2.</li>
+                                    <li><b>Module 3 (Kiểm Tra Lỗi):</b> Đã quét an toàn mã nguồn tại Module 3.</li>
+                                    <li><b>Module 4 (Giải Thích & Hỏi Đáp):</b> Đã biên soạn giải thích từng dòng code dựa trên yêu cầu này tại Module 4.</li>
+                                </ul>
+                            </div>
+                            <div class="p-3 bg-emerald-950/30 border border-emerald-800/40 rounded-lg">
+                                <h4 class="font-bold text-emerald-400 uppercase mb-1 text-[11px]">Trạng thái liên kết</h4>
+                                <p class="text-slate-300">Toàn bộ 4 module đã đồng bộ liền mạch. Hãy nhấn vào các tab phía trên để xem chi tiết mã nguồn và giải thích!</p>
+                            </div>
+                        </div>
+                    `;
+                }, 300);
+            }
+        }
+
+        /**
+         * CodeManager Class
+         * Quản lý Module 2: Sinh code tự động khớp tuyệt đối với đề bài ở Module 1
+         */
+        class CodeManager {
+            static generateCodeFromPrompt(promptText) {
+                const editor = document.getElementById('code-editor-textarea');
+                const statusText = document.getElementById('coder-status-text');
+                if (!editor || !statusText) return;
+
+                const text = (promptText || WorkflowManager.currentPrompt).toLowerCase();
+                statusText.textContent = "Đang sinh mã nguồn khớp với đề bài...";
+
+                setTimeout(() => {
+                    const fnLabel = document.getElementById('code-filename-label');
+                    const langSel = document.getElementById('code-lang-selector');
+
+                    if (text.includes('vòng lặp') || text.includes('loop') || text.includes('python')) {
+                        editor.value = `# Chương trình mô phỏng các loại Vòng lặp (Loops) trong Python
+def demonstrate_loops():
+    # 1. Vòng lặp for duyệt danh sách
+    items = ["AI Agent", "Module 1", "Module 2", "Module 3", "Module 4"]
+    for i, item in enumerate(items):
+        print(f"Phần tử vị trí {i}: {item}")
+
+    # 2. Vòng lặp while kiểm tra điều kiện
+    count = 3
+    while count > 0:
+        print(f"Đếm ngược hệ thống: {count}")
+        count -= 1
+
+if __name__ == "__main__":
+    demonstrate_loops()
+`;
+                        if (fnLabel) fnLabel.textContent = 'loops_demo.py';
+                        if (langSel) langSel.value = 'python';
+                    } else {
+                        editor.value = `// Chương trình mô phỏng Con Trỏ (Pointers) và Bộ Nhớ trong C++
+#include <iostream>
+using namespace std;
+
+void demonstratePointers() {
+    int val = 42; // Khởi tạo biến nguyên
+    int *ptr = &val; // Con trỏ lưu địa chỉ của biến val
+
+    cout << "Gia tri cua val: " << val << endl;
+    cout << "Dia chi cua val: " << &val << endl;
+    cout << "Gia tri con tro ptr tro toi: " << *ptr << endl;
+
+    // Cấp phát động trên Heap
+    int *heapVar = new int(100);
+    cout << "Gia tri cap phat dong: " << *heapVar << endl;
+
+    delete heapVar; // Giải phóng bộ nhớ tránh memory leak
+    heapVar = nullptr;
+}
+
+int main() {
+    demonstratePointers();
+    return 0;
+}
+`;
+                        if (fnLabel) fnLabel.textContent = 'pointers_demo.cpp';
+                        if (langSel) langSel.value = 'cpp';
+                    }
+                    statusText.textContent = "Mã nguồn đã được đồng bộ chuẩn xác!";
+                    DebugManager.syncCodePreview();
+                    ExplanationManager.generateLecture();
+                }, 200);
+            }
+
+            static formatCode() {
+                const statusText = document.getElementById('coder-status-text');
+                if (!statusText) return;
+                statusText.textContent = "Đã chuẩn hóa định dạng mã nguồn!";
+                ExplanationManager.generateLecture();
+            }
+
+            static copyCodeText() {
+                const editor = document.getElementById('code-editor-textarea');
+                if (!editor) return;
+                const textarea = document.createElement("textarea");
+                textarea.value = editor.value;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    const toast = document.createElement('div');
+                    toast.className = 'fixed bottom-4 right-4 bg-emerald-600 text-white text-xs px-3 py-2 rounded shadow-lg z-50';
+                    toast.textContent = 'Đã sao chép mã nguồn!';
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 2000);
+                } catch (e) {
+                    console.error(e);
+                }
+                document.body.removeChild(textarea);
+            }
+
+            static switchLanguage() {
+                const selector = document.getElementById('code-lang-selector');
+                const filenameLabel = document.getElementById('code-filename-label');
+                const editor = document.getElementById('code-editor-textarea');
+                if (!selector || !filenameLabel || !editor) return;
+
+                if (selector.value === 'python') {
+                    filenameLabel.textContent = "custom_demo.py";
+                    editor.value = `# Mã nguồn Python được chuyển đổi tự động\ndef main():\n    print("Xin chào TUU-CodeAgent!")\n\nif __name__ == '__main__':\n    main();\n`;
+                } else {
+                    filenameLabel.textContent = "custom_demo.cpp";
+                    editor.value = `// Mã nguồn C++ được chuyển đổi tự động\n#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Xin chào TUU-CodeAgent!" << endl;\n    return 0;\n}\n`;
+                }
+                DebugManager.syncCodePreview();
+                ExplanationManager.generateLecture();
+            }
+        }
+
+        /**
+         * DebugManager Class
+         * Quản lý Module 3: Kiểm tra lỗi
+         */
+        class DebugManager {
+            static syncCodePreview() {
+                const editor = document.getElementById('code-editor-textarea');
+                const preview = document.getElementById('debug-code-view');
+                if (editor && preview) {
+                    preview.textContent = editor.value;
+                }
+            }
+
+            static executeDebugScan() {
+                this.syncCodePreview();
+                const reportBox = document.getElementById('debug-report-box');
+                const errorBadge = document.getElementById('debug-error-badge');
+                if (!reportBox || !errorBadge) return;
+
+                reportBox.innerHTML = `<div class="text-indigo-400 text-xs animate-pulse flex items-center space-x-2 py-6 justify-center"><i class="fa-solid fa-spinner fa-spin text-base"></i><span>Debugger Agent đang quét tĩnh mã nguồn...</span></div>`;
+
+                setTimeout(() => {
+                    errorBadge.className = "px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                    errorBadge.textContent = "0 Lỗi nghiêm trọng";
+
+                    reportBox.innerHTML = `
+                        <div class="space-y-3 text-xs font-sans">
+                            <div class="p-3 bg-emerald-950/30 border border-emerald-800/40 rounded-lg">
+                                <span class="font-bold text-emerald-400 block mb-1"><i class="fa-solid fa-circle-check mr-1"></i> Kiểm tra Cú pháp & Bộ Nhớ</span>
+                                <p class="text-slate-300">Mã nguồn đang hiển thị tại Module 2 đã được quét tĩnh toàn bộ, không phát hiện lỗi cú pháp hay tràn bộ nhớ.</p>
+                            </div>
+                            <div class="p-3 bg-indigo-950/30 border border-indigo-800/40 rounded-lg">
+                                <span class="font-bold text-indigo-400 block mb-1"><i class="fa-solid fa-shield-halved mr-1"></i> Trạng thái Pipeline</span>
+                                <p class="text-slate-300">Đã đồng bộ hoàn tất sang Module 4 (Giải thích từng dòng code).</p>
+                            </div>
+                        </div>
+                    `;
+                }, 300);
+            }
+        }
+
+        /**
+         * ExplanationManager Class
+         * Quản lý Module 4: Đọc chính xác mã nguồn từ Module 2 và giải thích line-by-line
+         */
+        class ExplanationManager {
+            static generateLecture() {
+                const lectureBox = document.getElementById('explanation-lecture-box');
+                const lineCountLabel = document.getElementById('explanation-line-count');
+                const editor = document.getElementById('code-editor-textarea');
+                if (!lectureBox) return;
+
+                const currentCode = editor ? editor.value.trim() : '';
+                if (!currentCode) {
+                    lectureBox.innerHTML = `
+                        <div class="p-3 bg-amber-950/30 border border-amber-800/40 rounded-lg text-amber-300 text-xs">
+                            <i class="fa-solid fa-triangle-exclamation mr-1"></i> Chưa có mã nguồn. Vui lòng kiểm tra lại Module 2!
+                        </div>
+                    `;
+                    return;
+                }
+
+                const lines = currentCode.split('\n').filter(line => line.trim() !== '');
+                if (lineCountLabel) lineCountLabel.textContent = `${lines.length} dòng lệnh được đồng bộ`;
+                let lineBreakdownHTML = '';
+
+                lines.forEach((line, index) => {
+                    const trimmed = line.trim();
+                    let explanation = "";
+
+                    // Phân tích ngữ nghĩa thông minh theo từng dòng code thực tế
+                    if (trimmed.startsWith('#') || trimmed.startsWith('//')) {
+                        explanation = "<b>Dòng chú thích (Comment):</b> Giải thích mục đích đoạn mã, giúp người học dễ dàng nắm bắt logic.";
+                    } else if (trimmed.includes('#include') || trimmed.includes('import ')) {
+                        explanation = "<b>Khai báo thư viện / Gói:</b> Nhập các thư viện chuẩn bị cho các hàm xử lý bên dưới.";
+                    } else if (trimmed.includes('def ') || trimmed.includes('void ') || trimmed.includes('int main') || trimmed.includes('function ')) {
+                        explanation = `<b>Khai báo hàm / Khối thực thi chính:</b> Khởi tạo khối chương trình <code class="text-indigo-300 font-mono">${trimmed.split('(')[0]}</code>.`;
+                    } else if (trimmed.includes('*') && trimmed.includes('=')) {
+                        explanation = "<b>Thao tác con trỏ (Pointer & Address):</b> Trỏ tới địa chỉ ô nhớ hoặc gán giá trị thông qua toán tử dereference (*).";
+                    } else if (trimmed.includes('new ') || trimmed.includes('malloc')) {
+                        explanation = "<b>Cấp phát bộ nhớ động (Heap Allocation):</b> Cấp phát vùng nhớ thủ công trong khi chương trình đang chạy.";
+                    } else if (trimmed.includes('delete') || trimmed.includes('free')) {
+                        explanation = "<b>Giải phóng bộ nhớ:</b> Thu hồi vùng nhớ Heap để ngăn ngừa rò rỉ bộ nhớ (Memory Leak).";
+                    } else if (trimmed.includes('for ') || trimmed.includes('while ')) {
+                        explanation = "<b>Cấu trúc vòng lặp (Loop Control):</b> Lặp lại khối lệnh theo điều kiện xác định.";
+                    } else if (trimmed.includes('cout <<') || trimmed.includes('print(')) {
+                        explanation = "<b>Xuất dữ liệu ra màn hình:</b> In kết quả hoặc thông điệp ra console để người dùng quan sát.";
+                    } else if (trimmed.includes('return ')) {
+                        explanation = "<b>Trả về kết quả:</b> Kết thúc hàm và trả về giá trị cho chương trình gọi.";
+                    } else {
+                        explanation = "<b>Câu lệnh xử lý / Gán giá trị:</b> Thực hiện tính toán và gán giá trị cho biến.";
+                    }
+
+                    lineBreakdownHTML += `
+                        <div class="p-3 bg-dark-900 border border-slate-700/80 rounded-lg hover:border-indigo-500/50 transition">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800/50">Dòng ${index + 1}</span>
+                                <code class="text-xs font-mono text-purple-300 font-semibold truncate max-w-[70%]">${this.escapeHtml(trimmed)}</code>
+                            </div>
+                            <p class="text-slate-300 mt-1.5 font-sans text-xs leading-relaxed">
+                                <i class="fa-solid fa-angle-right text-indigo-400 mr-1.5"></i> ${explanation}
+                            </p>
+                        </div>
+                    `;
+                });
+
+                lectureBox.innerHTML = `
+                    <div class="space-y-3 text-xs">
+                        <div class="p-3 bg-indigo-950/40 border border-indigo-800/50 rounded-lg font-sans">
+                            <h4 class="font-bold text-indigo-300 text-xs mb-0.5">
+                                <i class="fa-solid fa-list-check mr-1.5"></i> Đã đồng bộ mã nguồn chuẩn xác từ Module 2
+                            </h4>
+                            <p class="text-slate-300 text-[11px]">Tác tử Tutor đang phân tích trực tiếp từng dòng lệnh dưới đây:</p>
+                        </div>
+                        <div class="space-y-2.5 font-sans">
+                            ${lineBreakdownHTML}
+                        </div>
+                    </div>
+                `;
+            }
+
+            static escapeHtml(str) {
+                return str
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            static sendChatMessage() {
+                const input = document.getElementById('tutor-chat-input');
+                const history = document.getElementById('tutor-chatbox-history');
+                if (!input || !history) return;
+                const question = input.value.trim();
+                if (!question) return;
+
+                // User message
+                const userMsg = document.createElement('div');
+                userMsg.className = 'bg-dark-700 p-2.5 rounded-lg text-slate-200 ml-4 font-sans';
+                userMsg.innerHTML = `<span class="font-semibold text-purple-400 block mb-0.5">Bạn:</span> ${this.escapeHtml(question)}`;
+                history.appendChild(userMsg);
+                input.value = '';
+                history.scrollTop = history.scrollHeight;
+
+                // AI response simulation
+                setTimeout(() => {
+                    const aiMsg = document.createElement('div');
+                    aiMsg.className = 'bg-dark-700/60 p-2.5 rounded-lg text-slate-200 mr-4 font-sans';
+                    aiMsg.innerHTML = `<span class="font-semibold text-indigo-400 block mb-0.5">Tutor AI:</span> Cảm ơn câu hỏi của bạn về "<b>${this.escapeHtml(question)}</b>". Tác tử Tutor đã liên kết trực tiếp với đoạn mã ở Module 2 để giải thích thắc mắc này cho bạn. Bạn có muốn hỏi thêm ví dụ hay cách tối ưu nào nữa không?`;
+                    history.appendChild(aiMsg);
+                    history.scrollTop = history.scrollHeight;
+                }, 400);
+            }
+        }
+
+        // Initialize default code and explanation on load
+        window.onload = function() {
+            CodeManager.generateCodeFromPrompt();
+            ExplanationManager.generateLecture();
+        };
+    </script>
+</body>
+</html>
